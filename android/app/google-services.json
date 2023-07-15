@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "179461278703",
+    "firebase_url": "https://task-tracker-c89e2-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "task-tracker-c89e2",
+    "storage_bucket": "task-tracker-c89e2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179461278703:android:14b9025f83555e76a8c41a",
+        "android_client_info": {
+          "package_name": "com.example.task_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "179461278703-uglhr2hasjj523ffi085q8sp8u66708b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQE15kMmMayPUnBqnY-_PWuOznq0FlARc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "179461278703-uglhr2hasjj523ffi085q8sp8u66708b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
