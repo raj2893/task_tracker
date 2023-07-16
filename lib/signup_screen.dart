@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:task_tracker/home_screen.dart';
 import 'package:task_tracker/login_screen.dart';
 import 'auth_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SignupScreen extends StatelessWidget {
   final AuthService _authService = AuthService();
@@ -11,6 +12,9 @@ class SignupScreen extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
 
   final TextEditingController _passwordController = TextEditingController();
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   void _signup(BuildContext context) async {
     String email = _emailController.text.trim();
@@ -43,6 +47,57 @@ class SignupScreen extends StatelessWidget {
           },
         );
       }
+    }
+  }
+
+  void _signUpWithGoogle(BuildContext context) async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser != null) {
+        await _googleSignIn.signOut();
+
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+        if (googleUser != null) {
+          final GoogleSignInAuthentication googleAuth =
+              await googleUser!.authentication;
+
+          final AuthCredential credential = GoogleAuthProvider.credential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken,
+          );
+
+          final UserCredential userCredential =
+              await _firebaseAuth.signInWithCredential(credential);
+          final User? user = userCredential.user;
+
+          if (user != null) {
+            // Sign-up successful, navigate to home screen
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Sign-up failed
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Sign-up Failed'),
+            content: Text('An error occurred while signing up with Google.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
@@ -127,6 +182,7 @@ class SignupScreen extends StatelessWidget {
                             padding: EdgeInsets.symmetric(vertical: 15)),
                       ),
                     ),
+                    SizedBox(height: 5.0),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text("Already have an account?"),
                       TextButton(
@@ -141,6 +197,26 @@ class SignupScreen extends StatelessWidget {
                         child: Text('Login'),
                       ),
                     ]),
+                    SizedBox(height: 25.0),
+                    Text('OR'),
+                    SizedBox(height: 25.0),
+                    FractionallySizedBox(
+                      widthFactor: 0.85,
+                      child: ElevatedButton(
+                        onPressed: () => _signUpWithGoogle(context),
+                        child: Text(
+                          'Sign up with Google',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

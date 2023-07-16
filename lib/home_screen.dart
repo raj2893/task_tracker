@@ -316,6 +316,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _signoutLogin() async {
+    await _authService.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SignupScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageUrl =
@@ -364,15 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 return [
                                   PopupMenuItem(
                                     child: TextButton(
-                                      onPressed: () {
-                                        _authService.signOut();
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  SignupScreen()),
-                                        );
-                                      },
+                                      onPressed: () => _signoutLogin(),
                                       child: Text('SignUp/Login'),
                                     ),
                                   ),
@@ -541,6 +541,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               SizedBox(height: 16.0),
                                               ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Color.fromARGB(
+                                                          255, 1, 93, 100),
+                                                  foregroundColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20.0),
+                                                  ),
+                                                ),
                                                 onPressed: () {
                                                   String task = taskController
                                                       .text
