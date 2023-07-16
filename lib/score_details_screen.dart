@@ -16,9 +16,10 @@ class ScoreDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 2,
-        title: Text('Score Details'),
-        centerTitle: true,
+        elevation: 0.5,
+        backgroundColor: Colors.white,
+        title: Text('Score Details', style: TextStyle(color: Colors.black)),
+        // centerTitle: true,
         iconTheme: IconThemeData(color: Colors.black),
       ),
       body: Center(
