@@ -83,6 +83,7 @@ class LoginScreen extends StatelessWidget {
       }
     } catch (e) {
       // Sign-in failed
+      print('Error while signing with google is : $e');
       showDialog(
         context: context,
         builder: (BuildContext context) {

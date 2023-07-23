@@ -76,6 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           taskList = [];
           score = 0;
+          setState(() {
+            isNewUser = true;
+          });
         });
       }
       final scoreDoc = await collection.doc('score').get();
@@ -180,18 +183,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         if (task.isCompleted) {
-          score -= 5;
+          setState(() {
+            score -= 5;
+          });
         }
         taskList.remove(task);
       });
 
       await collection.doc(task.id).delete(); // Use the task's id
 
+      // await collection.doc('taskList').update({
+      //   'tasks': taskList.map((task) => task.toJson()).toList(),
+      // });
+
+      await collection.doc('score').set({
+        'score': score,
+      });
+
       await collection.doc('taskList').update({
         'tasks': taskList.map((task) => task.toJson()).toList(),
+        'score': score,
+      });
+    }
+  }
+
+  Future<void> resetScore() async {
+    final User? currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      final collection = _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('taskList');
+
+      setState(() {
+        score = 0;
+        for (Task task in taskList) {
+          task.isCompleted = false;
+          collection.doc(task.id).update({'isCompleted': false});
+        }
       });
 
       await collection.doc('score').set({
+        'score': score,
+      });
+
+      await collection.doc('taskList').update({
+        'tasks': taskList.map((task) => task.toJson()).toList(),
         'score': score,
       });
     }
@@ -255,33 +292,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> resetScore() async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      final collection = _firestore
-          .collection('users')
-          .doc(_auth.currentUser!.uid)
-          .collection('taskList');
-
-      setState(() {
-        score = 0;
-        for (Task task in taskList) {
-          task.isCompleted = false;
-          collection.doc(task.id).update({'isCompleted': false});
-        }
-      });
-
-      await collection.doc('score').set({
-        'score': score,
-      });
-
-      await collection.doc('taskList').update({
-        'tasks': taskList.map((task) => task.toJson()).toList(),
-        'score': score,
-      });
-    }
-  }
-
   Future<void> checkNewUser() async {
     final User? currentUser = _auth.currentUser;
     if (currentUser != null) {
@@ -326,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl =
+    const imageUrl =
         'https://firebasestorage.googleapis.com/v0/b/task-tracker-c89e2.appspot.com/o/backgroundImage%2FloginBG.jpg?alt=media&token=c1b8e80f-08fd-4db9-98c1-472beb903cda';
 
     return FutureBuilder<void>(
@@ -420,50 +430,62 @@ class _HomeScreenState extends State<HomeScreen> {
                                       (BuildContext context, int index) {
                                     Task task = taskList[index];
                                     return Padding(
-                                      padding: EdgeInsets.all(8.0),
+                                      padding: EdgeInsets.all(1.0),
                                       child: Card(
                                         color: const Color.fromARGB(
                                             255, 250, 250, 250),
-                                        child: ListTile(
-                                          leading: Checkbox(
-                                            value: task.isCompleted,
-                                            onChanged: (value) =>
-                                                completeTask(task),
-                                          ),
-                                          title: Text(
-                                            task.name,
-                                            style: TextStyle(
-                                              decoration: task.isCompleted
-                                                  ? TextDecoration.lineThrough
-                                                  : null,
-                                              color: task.isCompleted
-                                                  ? Colors.grey
-                                                  : null,
+                                        child: Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: ListTile(
+                                            leading: Checkbox(
+                                              value: task.isCompleted,
+                                              onChanged: (value) =>
+                                                  completeTask(task),
                                             ),
-                                          ),
-                                          trailing: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.25,
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Expanded(
-                                                  child: IconButton(
-                                                    icon: Icon(Icons.edit),
-                                                    onPressed: () =>
-                                                        _editTask(task),
+                                            title: Text(
+                                              task.name,
+                                              style: TextStyle(
+                                                fontSize: 17.5,
+                                                decoration: task.isCompleted
+                                                    ? TextDecoration.lineThrough
+                                                    : null,
+                                                color: task.isCompleted
+                                                    ? Colors.grey
+                                                    : null,
+                                              ),
+                                            ),
+                                            trailing: Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.25,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Expanded(
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        Icons.edit,
+                                                        color: Color.fromARGB(
+                                                            255, 1, 93, 100),
+                                                      ),
+                                                      onPressed: () =>
+                                                          _editTask(task),
+                                                    ),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  child: IconButton(
-                                                    icon: Icon(Icons.delete),
-                                                    onPressed: () =>
-                                                        deleteTask(task),
+                                                  Expanded(
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        Icons.delete,
+                                                        color: Color.fromARGB(
+                                                            255, 169, 11, 0),
+                                                      ),
+                                                      onPressed: () =>
+                                                          deleteTask(task),
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
