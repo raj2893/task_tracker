@@ -107,125 +107,163 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     String imageUrl =
         'https://firebasestorage.googleapis.com/v0/b/task-tracker-c89e2.appspot.com/o/backgroundImage%2FloginBG.jpg?alt=media&token=c1b8e80f-08fd-4db9-98c1-472beb903cda';
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Container(
-        decoration: BoxDecoration(
-          image:
-              DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.fill),
-        ),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          // appBar: AppBar(
-          //   elevation: 0.5,
-          //   centerTitle: true,
-          //   title: Text(
-          //     'Task Tracker',
-          //     style: TextStyle(color: Colors.black),
-          //   ),
-          //   backgroundColor: Colors.white,
-          // ),
-          body: Center(
-            child: SingleChildScrollView(
-              child: Container(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Task Tracker",
-                      style: GoogleFonts.kaushanScript(
-                          fontSize: 45, fontWeight: FontWeight.w900),
-                    ),
-                    SizedBox(height: 20.0),
-                    FractionallySizedBox(
-                      widthFactor: 0.85,
-                      child: TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          hintText: 'Email',
-                          hintStyle: TextStyle(
-                              color: Color.fromARGB(255, 161, 161, 161)),
-                          fillColor: Colors.white,
-                          filled: true,
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none),
+
+    return FutureBuilder<void>(
+        future: precacheImage(NetworkImage(imageUrl), context),
+        builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Failed to load image'),
+            );
+          } else {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                      image: NetworkImage(imageUrl), fit: BoxFit.fill),
+                ),
+                child: Scaffold(
+                  backgroundColor: Colors.transparent,
+                  // appBar: AppBar(
+                  //   elevation: 0.5,
+                  //   centerTitle: true,
+                  //   title: Text(
+                  //     'Task Tracker',
+                  //     style: TextStyle(color: Colors.black),
+                  //   ),
+                  //   backgroundColor: Colors.white,
+                  // ),
+                  body: Center(
+                    child: SingleChildScrollView(
+                      child: Container(
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Task Tracker",
+                              style: GoogleFonts.kaushanScript(
+                                  fontSize: 45, fontWeight: FontWeight.w900),
+                            ),
+                            SizedBox(height: 20.0),
+                            FractionallySizedBox(
+                              widthFactor: 0.85,
+                              child: TextField(
+                                controller: _emailController,
+                                decoration: InputDecoration(
+                                  hintText: 'Email',
+                                  hintStyle: TextStyle(
+                                      color:
+                                          Color.fromARGB(255, 161, 161, 161)),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide.none),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 10.0),
+                            FractionallySizedBox(
+                              widthFactor: 0.85,
+                              child: TextField(
+                                controller: _passwordController,
+                                decoration: InputDecoration(
+                                  hintText: 'Password',
+                                  hintStyle: TextStyle(
+                                      color:
+                                          Color.fromARGB(255, 161, 161, 161)),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide.none),
+                                ),
+                                obscureText: true,
+                              ),
+                            ),
+                            SizedBox(height: 16.0),
+                            FractionallySizedBox(
+                              widthFactor: 0.85,
+                              child: ElevatedButton(
+                                onPressed: () => _login(context),
+                                child: Text('Login'),
+                                style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    backgroundColor: Colors.black,
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 15)),
+                              ),
+                            ),
+                            SizedBox(height: 5.0),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text("Don't have an account?"),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                SignupScreen()),
+                                      );
+                                    },
+                                    // Call _signup method when pressed
+                                    child: Text('Sign Up'),
+                                  ),
+                                ]),
+                            SizedBox(height: 25.0),
+                            Text('OR'),
+                            SizedBox(height: 25.0),
+                            FractionallySizedBox(
+                              widthFactor: 0.85,
+                              child: ElevatedButton(
+                                onPressed: () => _signInWithGoogle(context),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 12),
+                                      child: Image.asset(
+                                        'assets/google.png',
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.04,
+                                      ),
+                                    ),
+                                    Text('Sign in with Google',
+                                        style: TextStyle(color: Colors.black)),
+                                  ],
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: 15),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 252, 252, 252),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    SizedBox(height: 10.0),
-                    FractionallySizedBox(
-                      widthFactor: 0.85,
-                      child: TextField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          hintText: 'Password',
-                          hintStyle: TextStyle(
-                              color: Color.fromARGB(255, 161, 161, 161)),
-                          fillColor: Colors.white,
-                          filled: true,
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none),
-                        ),
-                        obscureText: true,
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    FractionallySizedBox(
-                      widthFactor: 0.85,
-                      child: ElevatedButton(
-                        onPressed: () => _login(context),
-                        child: Text('Login'),
-                        style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                            backgroundColor: Colors.black,
-                            padding: EdgeInsets.symmetric(vertical: 15)),
-                      ),
-                    ),
-                    SizedBox(height: 5.0),
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text("Don't have an account?"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SignupScreen()),
-                          );
-                        },
-                        // Call _signup method when pressed
-                        child: Text('Sign Up'),
-                      ),
-                    ]),
-                    SizedBox(height: 25.0),
-                    Text('OR'),
-                    SizedBox(height: 25.0),
-                    FractionallySizedBox(
-                      widthFactor: 0.85,
-                      child: ElevatedButton(
-                        onPressed: () => _signInWithGoogle(context),
-                        child: Text('Sign in with Google',
-                            style: TextStyle(color: Colors.black)),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          backgroundColor:
-                              const Color.fromARGB(255, 252, 252, 252),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
-    );
+            );
+          }
+        });
   }
 }

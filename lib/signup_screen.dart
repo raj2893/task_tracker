@@ -204,9 +204,20 @@ class SignupScreen extends StatelessWidget {
                       widthFactor: 0.85,
                       child: ElevatedButton(
                         onPressed: () => _signUpWithGoogle(context),
-                        child: Text(
-                          'Sign up with Google',
-                          style: TextStyle(color: Colors.black),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(right: 12),
+                              child: Image.asset(
+                                'assets/google.png',
+                                height:
+                                    MediaQuery.of(context).size.height * 0.04,
+                              ),
+                            ),
+                            Text('Sign up with Google',
+                                style: TextStyle(color: Colors.black)),
+                          ],
                         ),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
