@@ -140,60 +140,84 @@ class ScoreDetailsScreen extends StatelessWidget {
               SizedBox(width: MediaQuery.of(context).size.width * 0.04),
             ]),
             SizedBox(height: MediaQuery.of(context).size.height * 0.015),
-            Container(
-              height: MediaQuery.of(context).size.height * 0.58,
-              width: MediaQuery.of(context).size.width * 0.95,
-              child: Card(
-                  // color: const Color.fromARGB(255, 255, 217, 183),
-                  color: const Color.fromARGB(255, 0, 17, 48),
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(15),
-                          topRight: Radius.circular(15))),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.015),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            CupertinoIcons.check_mark_circled_solid,
-                            color: Colors.white,
-                          ),
-                          SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.02),
-                          const Text(
-                            'Score Breakdown',
-                            style: TextStyle(
-                                fontSize: 24.0,
-                                fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 218, 255, 251)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10.0),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(children: [
-                            for (Task task in tasks)
-                              if (task.isCompleted)
-                                Padding(
-                                  padding: EdgeInsets.all(30),
-                                  child: Text(
-                                    task.name,
-                                    style: const TextStyle(
-                                      fontSize: 18.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color.fromARGB(255, 218, 255, 251),
+            Expanded(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.95,
+                child: Card(
+                    // color: const Color.fromARGB(255, 255, 217, 183),
+                    color: const Color.fromARGB(255, 0, 17, 48),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                            topRight: Radius.circular(15))),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.015),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              CupertinoIcons.check_mark_circled_solid,
+                              color: Colors.white,
+                            ),
+                            SizedBox(
+                                width:
+                                    MediaQuery.of(context).size.width * 0.02),
+                            const Text(
+                              'Score Breakdown',
+                              style: TextStyle(
+                                  fontSize: 24.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color.fromARGB(255, 218, 255, 251)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20.0),
+                        Expanded(
+                          child: ListView.separated(
+                            separatorBuilder: (context, index) {
+                              // Add a separator between items
+                              return const Divider(
+                                color: Colors.white,
+                                height: 1,
+                                thickness: 1,
+                              );
+                            },
+                            itemCount: tasks.length,
+                            itemBuilder: (context, index) {
+                              final task = tasks[index];
+
+                              if (task.isCompleted) {
+                                final completedTaskIndex = tasks
+                                    .take(index + 1)
+                                    .where((t) => t.isCompleted)
+                                    .toList()
+                                    .length;
+                                return Card(
+                                  color: Color.fromARGB(255, 218, 255, 251),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(30),
+                                    child: Text(
+                                      '${completedTaskIndex}. ${task.name}',
+                                      style: const TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color.fromARGB(255, 0, 17, 48),
+                                      ),
                                     ),
                                   ),
-                                )
-                          ]),
-                        ),
-                      )
-                    ],
-                  )),
+                                );
+                              } else {
+                                // If the task is not completed, return an empty container.
+                                return Container();
+                              }
+                            },
+                          ),
+                        )
+                      ],
+                    )),
+              ),
             )
           ],
         ),
