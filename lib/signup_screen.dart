@@ -103,14 +103,12 @@ class SignupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String imageUrl =
-        'https://firebasestorage.googleapis.com/v0/b/task-tracker-c89e2.appspot.com/o/backgroundImage%2FloginBG.jpg?alt=media&token=c1b8e80f-08fd-4db9-98c1-472beb903cda';
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Container(
         decoration: BoxDecoration(
-          image:
-              DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.fill),
+          image: DecorationImage(
+              image: AssetImage('assets/loginBG.jpg'), fit: BoxFit.fill),
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,

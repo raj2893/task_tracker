@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'score_details_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -20,25 +22,60 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  List<String> motivationalQuotes = [
-    "The only way to do great work is to love what you do.",
-    "Don't watch the clock; do what it does. Keep going.",
-    "The future depends on what you do today.",
-    "Believe you can and you're halfway there.",
-    "Success is not final, failure is not fatal: It is the courage to continue that counts."
-  ];
+  // List<String> motivationalQuotes = [
+  //   "The only way to do great work is to love what you do.",
+  //   "Don't watch the clock; do what it does. Keep going.",
+  //   "The future depends on what you do today.",
+  //   "Believe you can and you're halfway there.",
+  //   "Success is not final, failure is not fatal: It is the courage to continue that counts."
+  // ];
 
   String quote = '';
+  String _quote = 'Loading...';
   bool isNewUser = false;
 
   @override
   void initState() {
     super.initState();
     initializePreferences();
-    getRandomQuote();
+    // getRandomQuote();
     taskList = [];
     score = 0;
     loadTasksFromFirestore();
+    _fetchRandomQuote();
+  }
+
+  void _fetchRandomQuote() async {
+    try {
+      // Replace 'YOUR_API_ENDPOINT' with the actual URL of your API that provides random quotes.
+      var url = Uri.parse('https://zenquotes.io/api/quotes/');
+      var response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        // Assuming your API response is in the format: {"quote": "Your random quote here"}
+        List<dynamic> data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          final randomIndex = Random().nextInt(data.length);
+          setState(() {
+            _quote = data[randomIndex]['q'];
+          });
+        } else {
+          setState(() {
+            _quote = 'No quotes Available';
+          });
+        }
+      } else {
+        // Handle the case when the API call fails.
+        setState(() {
+          _quote = 'Failed to fetch quote';
+        });
+      }
+    } catch (e) {
+      // Handle any exceptions that occur during the API call.
+      setState(() {
+        _quote = 'Error: $e';
+      });
+    }
   }
 
   Future<void> initializePreferences() async {
@@ -90,11 +127,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void getRandomQuote() {
-    setState(() {
-      quote = motivationalQuotes[Random().nextInt(motivationalQuotes.length)];
-    });
-  }
+  // void getRandomQuote() {
+  //   setState(() {
+  //     quote = motivationalQuotes[Random().nextInt(motivationalQuotes.length)];
+  //   });
+  // }
 
   Future<void> addTask(String taskName) async {
     final User? currentUser = _auth.currentUser;
@@ -242,17 +279,17 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Task'),
+          title: const Text('Edit Task'),
           content: TextField(
             controller: taskController,
-            decoration: InputDecoration(hintText: 'Enter task'),
+            decoration: const InputDecoration(hintText: 'Enter task'),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -284,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 }
               },
-              child: Text('Save Changes'),
+              child: const Text('Save Changes'),
             ),
           ],
         );
@@ -336,289 +373,275 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const imageUrl =
-        'https://firebasestorage.googleapis.com/v0/b/task-tracker-c89e2.appspot.com/o/backgroundImage%2FloginBG.jpg?alt=media&token=c1b8e80f-08fd-4db9-98c1-472beb903cda';
-
-    return FutureBuilder<void>(
-        future: precacheImage(NetworkImage(imageUrl), context),
-        builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('Failed to load image'),
-            );
-          } else {
-            return MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                      image: NetworkImage(imageUrl), fit: BoxFit.fill),
+    //   return const Scaffold(
+    //     body: Center(
+    //       child: CircularProgressIndicator(),
+    //     ),
+    //   );
+    // } else if (snapshot.hasError) {
+    //   return const Center(
+    //     child: Text('Failed to load image'),
+    //   );
+    // } else {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+              image: AssetImage('assets/loginBG.jpg'), fit: BoxFit.fill),
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            elevation: 0.5,
+            backgroundColor: Colors.white,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Task Tracker',
+                  style: TextStyle(color: Colors.black),
                 ),
-                child: Scaffold(
-                  backgroundColor: Colors.transparent,
-                  resizeToAvoidBottomInset: false,
-                  appBar: AppBar(
-                    elevation: 0.5,
-                    backgroundColor: Colors.white,
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Task Tracker',
-                          style: TextStyle(color: Colors.black),
-                        ),
-                        Row(
-                          children: [
-                            PopupMenuButton(
-                              iconSize: 40,
-                              offset: Offset(0, 50),
-                              itemBuilder: (BuildContext context) {
-                                return [
-                                  PopupMenuItem(
-                                    child: TextButton(
-                                      onPressed: () => _signoutLogin(),
-                                      child: Text('SignUp/Login'),
-                                    ),
-                                  ),
-                                  PopupMenuItem(
-                                    child: TextButton(
-                                      onPressed: () => _signOut(),
-                                      child: Text('SignOut'),
-                                    ),
-                                  ),
-                                ];
-                              },
-                              icon: Icon(Icons.account_circle,
-                                  color: Colors.black),
+                Row(
+                  children: [
+                    PopupMenuButton(
+                      iconSize: 40,
+                      offset: const Offset(0, 50),
+                      itemBuilder: (BuildContext context) {
+                        return [
+                          PopupMenuItem(
+                            child: TextButton(
+                              onPressed: () => _signoutLogin(),
+                              child: const Text('SignUp/Login'),
                             ),
-                            GestureDetector(
-                              onTap: viewScoreDetails,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.black, width: 1.5),
-                                ),
-                                padding: EdgeInsets.all(8.0),
-                                child: Text(
-                                  score.toString().padLeft(2, '0'),
-                                  style: TextStyle(
-                                      fontSize: 14, color: Colors.black),
-                                ),
-                              ),
+                          ),
+                          PopupMenuItem(
+                            child: TextButton(
+                              onPressed: () => _signOut(),
+                              child: const Text('SignOut'),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ];
+                      },
+                      icon:
+                          const Icon(Icons.account_circle, color: Colors.black),
                     ),
-                  ),
-                  body: SafeArea(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: taskList.isEmpty
-                              ? const Center(child: Text('No tasks found'))
-                              : ListView.builder(
-                                  itemCount: taskList.length,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    Task task = taskList[index];
-                                    return Padding(
-                                      padding: EdgeInsets.all(1.0),
-                                      child: Card(
-                                        color: const Color.fromARGB(
-                                            255, 250, 250, 250),
-                                        child: Padding(
-                                          padding: EdgeInsets.all(10),
-                                          child: ListTile(
-                                            leading: Checkbox(
-                                              value: task.isCompleted,
-                                              onChanged: (value) =>
-                                                  completeTask(task),
-                                            ),
-                                            title: Text(
-                                              task.name,
-                                              style: TextStyle(
-                                                fontSize: 17.5,
-                                                decoration: task.isCompleted
-                                                    ? TextDecoration.lineThrough
-                                                    : null,
-                                                color: task.isCompleted
-                                                    ? Colors.grey
-                                                    : null,
+                    GestureDetector(
+                      onTap: viewScoreDetails,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 1.5),
+                        ),
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          score.toString().padLeft(2, '0'),
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.black),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: taskList.isEmpty
+                      ? const Center(child: Text('No tasks found'))
+                      : ListView.builder(
+                          itemCount: taskList.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            Task task = taskList[index];
+                            return Padding(
+                              padding: const EdgeInsets.all(1.0),
+                              child: Card(
+                                color: const Color.fromARGB(255, 250, 250, 250),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: ListTile(
+                                    leading: Checkbox(
+                                      value: task.isCompleted,
+                                      onChanged: (value) => completeTask(task),
+                                    ),
+                                    title: Text(
+                                      task.name,
+                                      style: TextStyle(
+                                        fontSize: 17.5,
+                                        decoration: task.isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                        color: task.isCompleted
+                                            ? Colors.grey
+                                            : null,
+                                      ),
+                                    ),
+                                    trailing: Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.25,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Expanded(
+                                            child: IconButton(
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                color: Color.fromARGB(
+                                                    255, 1, 93, 100),
                                               ),
-                                            ),
-                                            trailing: Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.25,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Expanded(
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        Icons.edit,
-                                                        color: Color.fromARGB(
-                                                            255, 1, 93, 100),
-                                                      ),
-                                                      onPressed: () =>
-                                                          _editTask(task),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        Icons.delete,
-                                                        color: Color.fromARGB(
-                                                            255, 169, 11, 0),
-                                                      ),
-                                                      onPressed: () =>
-                                                          deleteTask(task),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                              onPressed: () => _editTask(task),
                                             ),
                                           ),
+                                          Expanded(
+                                            child: IconButton(
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Color.fromARGB(
+                                                    255, 169, 11, 0),
+                                              ),
+                                              onPressed: () => deleteTask(task),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                if (isNewUser)
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.grey[200],
+                      ),
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                        "Welcome to Task Tracker! \nDon't wait to add your first task! Click on the + button below to get started.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ),
+                if (!isNewUser)
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.grey[200],
+                      ),
+                      padding: const EdgeInsets.all(10.0),
+                      child: TextButton(
+                        onPressed: _fetchRandomQuote,
+                        child: Text(
+                          "\" $_quote \"",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            color: Color.fromARGB(255, 1, 93, 100),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Container(
+                  margin: EdgeInsets.fromLTRB(
+                      0, 0, 0, MediaQuery.of(context).size.height * 0.02),
+                  child: IntrinsicHeight(
+                    child: IntrinsicWidth(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            isScrollControlled: true,
+                            context: context,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(16.0)),
+                            ),
+                            builder: (BuildContext context) {
+                              TextEditingController taskController =
+                                  TextEditingController();
+                              return SingleChildScrollView(
+                                child: Container(
+                                  padding: EdgeInsets.only(
+                                    bottom: MediaQuery.of(context)
+                                        .viewInsets
+                                        .bottom,
+                                    left: 16.0,
+                                    right: 16.0,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextField(
+                                        controller: taskController,
+                                        decoration: const InputDecoration(
+                                          hintText: 'Enter task',
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
-                        ),
-                        if (isNewUser)
-                          Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.grey[200],
-                              ),
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                "Welcome to Task Tracker! \nDon't wait to add your first task! Click on the + button below to get started.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 20),
-                              ),
-                            ),
-                          ),
-                        if (!isNewUser)
-                          Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.grey[200],
-                              ),
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                quote,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 20),
-                              ),
-                            ),
-                          ),
-                        Container(
-                          margin: EdgeInsets.fromLTRB(0, 0, 0,
-                              MediaQuery.of(context).size.height * 0.02),
-                          child: IntrinsicHeight(
-                            child: IntrinsicWidth(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    isScrollControlled: true,
-                                    context: context,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(16.0)),
-                                    ),
-                                    builder: (BuildContext context) {
-                                      TextEditingController taskController =
-                                          TextEditingController();
-                                      return SingleChildScrollView(
-                                        child: Container(
-                                          padding: EdgeInsets.only(
-                                            bottom: MediaQuery.of(context)
-                                                .viewInsets
-                                                .bottom,
-                                            left: 16.0,
-                                            right: 16.0,
-                                          ),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              TextField(
-                                                controller: taskController,
-                                                decoration: InputDecoration(
-                                                  hintText: 'Enter task',
-                                                ),
-                                              ),
-                                              SizedBox(height: 16.0),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Color.fromARGB(
-                                                          255, 1, 93, 100),
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            20.0),
-                                                  ),
-                                                ),
-                                                onPressed: () {
-                                                  String task = taskController
-                                                      .text
-                                                      .trim();
-                                                  if (task.isNotEmpty) {
-                                                    addTask(task);
-                                                    Navigator.of(context).pop();
-                                                  }
-                                                },
-                                                child: Text('Add Task'),
-                                              ),
-                                            ],
+                                      const SizedBox(height: 16.0),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color.fromARGB(
+                                              255, 1, 93, 100),
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(20.0),
                                           ),
                                         ),
-                                      );
-                                    },
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Color.fromARGB(255, 1, 93, 100),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(50.0),
+                                        onPressed: () {
+                                          String task =
+                                              taskController.text.trim();
+                                          if (task.isNotEmpty) {
+                                            addTask(task);
+                                            Navigator.of(context).pop();
+                                          }
+                                        },
+                                        child: const Text('Add Task'),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add),
-                                    SizedBox(width: 5.0),
-                                    Text('Add Task')
-                                  ],
-                                ),
-                              ),
-                            ),
+                              );
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 1, 93, 100),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50.0),
                           ),
                         ),
-                      ],
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add),
+                            SizedBox(width: 5.0),
+                            Text('Add Task')
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }
-        });
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
