@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_tracker/home_screen.dart';
+import 'package:task_tracker/utilities/colors.dart';
 import 'auth_service.dart';
 import 'signup_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -35,12 +36,12 @@ class LoginScreen extends StatelessWidget {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Login Failed'),
-              content: Text('Invalid email or password.'),
+              title: const Text('Login Failed'),
+              content: const Text('Invalid email or password.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('OK'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -88,12 +89,13 @@ class LoginScreen extends StatelessWidget {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Sign-in Failed'),
-            content: Text('An error occurred while signing in with Google.'),
+            title: const Text('Sign-in Failed'),
+            content:
+                const Text('An error occurred while signing in with Google.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           );
@@ -109,8 +111,7 @@ class LoginScreen extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Container(
         decoration: BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage('assets/loginBG.jpg'), fit: BoxFit.fill),
+          color: bgColor,
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -126,23 +127,25 @@ class LoginScreen extends StatelessWidget {
           body: Center(
             child: SingleChildScrollView(
               child: Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       "Task Tracker",
                       style: GoogleFonts.kaushanScript(
-                          fontSize: 45, fontWeight: FontWeight.w900),
+                          color: textColor,
+                          fontSize: 45,
+                          fontWeight: FontWeight.w900),
                     ),
-                    SizedBox(height: 20.0),
+                    const SizedBox(height: 40.0),
                     FractionallySizedBox(
                       widthFactor: 0.85,
                       child: TextField(
                         controller: _emailController,
                         decoration: InputDecoration(
                           hintText: 'Email',
-                          hintStyle: TextStyle(
+                          hintStyle: const TextStyle(
                               color: Color.fromARGB(255, 161, 161, 161)),
                           fillColor: Colors.white,
                           filled: true,
@@ -152,14 +155,14 @@ class LoginScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: 10.0),
+                    const SizedBox(height: 10.0),
                     FractionallySizedBox(
                       widthFactor: 0.85,
                       child: TextField(
                         controller: _passwordController,
                         decoration: InputDecoration(
                           hintText: 'Password',
-                          hintStyle: TextStyle(
+                          hintStyle: const TextStyle(
                               color: Color.fromARGB(255, 161, 161, 161)),
                           fillColor: Colors.white,
                           filled: true,
@@ -170,22 +173,28 @@ class LoginScreen extends StatelessWidget {
                         obscureText: true,
                       ),
                     ),
-                    SizedBox(height: 16.0),
+                    const SizedBox(height: 16.0),
                     FractionallySizedBox(
                       widthFactor: 0.85,
                       child: ElevatedButton(
                         onPressed: () => _login(context),
-                        child: Text('Login'),
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20)),
-                            backgroundColor: Colors.black,
-                            padding: EdgeInsets.symmetric(vertical: 15)),
+                            backgroundColor: buttonColor,
+                            padding: const EdgeInsets.symmetric(vertical: 15)),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(color: Colors.black),
+                        ),
                       ),
                     ),
-                    SizedBox(height: 5.0),
+                    const SizedBox(height: 5.0),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text("Don't have an account?"),
+                      Text(
+                        "Don't have an account?",
+                        style: TextStyle(color: textColor),
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -195,38 +204,45 @@ class LoginScreen extends StatelessWidget {
                           );
                         },
                         // Call _signup method when pressed
-                        child: Text('Sign Up'),
+                        child: const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                              color: Color.fromARGB(255, 68, 255, 211)),
+                        ),
                       ),
                     ]),
-                    SizedBox(height: 25.0),
-                    Text('OR'),
-                    SizedBox(height: 25.0),
+                    const SizedBox(height: 25.0),
+                    Text(
+                      'OR',
+                      style: TextStyle(color: textColor),
+                    ),
+                    const SizedBox(height: 25.0),
                     FractionallySizedBox(
                       widthFactor: 0.85,
                       child: ElevatedButton(
                         onPressed: () => _signInWithGoogle(context),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor:
+                              const Color.fromARGB(255, 252, 252, 252),
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Padding(
-                              padding: EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.only(right: 12),
                               child: Image.asset(
                                 'assets/google.png',
                                 height:
                                     MediaQuery.of(context).size.height * 0.04,
                               ),
                             ),
-                            Text('Sign in with Google',
+                            const Text('Sign in with Google',
                                 style: TextStyle(color: Colors.black)),
                           ],
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          backgroundColor:
-                              const Color.fromARGB(255, 252, 252, 252),
                         ),
                       ),
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:task_tracker/utilities/colors.dart';
 import 'task.dart';
 
 class ScoreDetailsScreen extends StatelessWidget {
@@ -18,21 +19,26 @@ class ScoreDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0.5,
-        backgroundColor: Colors.white,
+        elevation: 0.1,
+        backgroundColor: bgColor,
 
-        title: const Column(
+        title: Column(
           children: [
-            Text('Score Details', style: TextStyle(color: Colors.black)),
+            Text(
+              'Score Details',
+              style: GoogleFonts.ubuntu(
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 201, 255, 238),
+                  fontSize: 24),
+            ),
           ],
         ),
         // centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage('assets/loginBG.jpg'), fit: BoxFit.fill),
+        decoration: BoxDecoration(
+          color: bgColor,
         ),
         child: Center(
           child: Column(
@@ -129,19 +135,19 @@ class ScoreDetailsScreen extends StatelessWidget {
                 Container(
                   height: MediaQuery.of(context).size.height * 0.0015,
                   width: MediaQuery.of(context).size.width * 0.4,
-                  color: Colors.black45,
+                  color: textColor,
                 ),
                 SizedBox(width: MediaQuery.of(context).size.width * 0.03),
                 Container(
                   height: MediaQuery.of(context).size.height * 0.0015,
                   width: MediaQuery.of(context).size.width * 0.06,
-                  color: Colors.black45,
+                  color: textColor,
                 ),
                 SizedBox(width: MediaQuery.of(context).size.width * 0.03),
                 Container(
                   height: MediaQuery.of(context).size.height * 0.0015,
                   width: MediaQuery.of(context).size.width * 0.4,
-                  color: Colors.black45,
+                  color: textColor,
                 ),
                 SizedBox(width: MediaQuery.of(context).size.width * 0.04),
               ]),

@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:task_tracker/login_screen.dart';
 import 'package:task_tracker/signup_screen.dart';
+import 'package:task_tracker/utilities/colors.dart';
 import 'task.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String backgroundImagePath = '';
-  bool isImageLoading = true;
+  // bool isImageLoading = true;
   late Timer _timer;
 
   // List<String> motivationalQuotes = [
@@ -51,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
     score = 0;
     loadTasksFromFirestore();
     _fetchRandomQuote();
-    _loadImage();
     _startTimer();
   }
 
@@ -445,54 +446,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _loadImage() async {
-    try {
-      // Load the image path
-      final imagePath = await _getImagePath();
-      setState(() {
-        backgroundImagePath = imagePath;
-        isImageLoading = false;
-      });
-    } catch (e) {
-      print('Failed to load image: $e');
-    }
-  }
+  // Future<void> _loadImage() async {
+  //   try {
+  //     // Load the image path
+  //     final imagePath = await _getImagePath();
+  //     setState(() {
+  //       backgroundImagePath = imagePath;
+  //       isImageLoading = false;
+  //     });
+  //   } catch (e) {
+  //     print('Failed to load image: $e');
+  //   }
+  // }
 
-  Future<String> _getImagePath() async {
-    // Simulate image loading by adding a delay.
-    await Future.delayed(const Duration(seconds: 4));
-    return 'assets/loginBG.jpg';
-  }
+  // Future<String> _getImagePath() async {
+  //   // Simulate image loading by adding a delay.
+  //   await Future.delayed(const Duration(seconds: 4));
+  //   return 'assets/loginBG.jpg';
+  // }
 
   @override
   Widget build(BuildContext context) {
-    //   return const Scaffold(
-    //     body: Center(
-    //       child: CircularProgressIndicator(),
-    //     ),
-    //   );
-    // } else if (snapshot.hasError) {
-    //   return const Center(
-    //     child: Text('Failed to load image'),
-    //   );
-    // } else {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Container(
           decoration:
-              const BoxDecoration(color: Color.fromARGB(255, 21, 28, 44)),
+              const BoxDecoration(color: Color.fromARGB(255, 24, 61, 61)),
           child: Scaffold(
             backgroundColor: Colors.transparent,
             resizeToAvoidBottomInset: false,
             appBar: AppBar(
-              elevation: 0.5,
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              elevation: 0.1,
+              backgroundColor: const Color.fromARGB(255, 24, 61, 61),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Task Tracker',
-                    style: TextStyle(color: Colors.black),
+                    style: GoogleFonts.ubuntu(
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 201, 255, 238),
+                        fontSize: 24),
                   ),
                   Row(
                     children: [
@@ -520,21 +514,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ];
                           },
-                          icon: const Icon(Icons.account_circle,
-                              color: Colors.black),
+                          icon: Icon(Icons.account_circle, color: iconColor),
                         ),
                       GestureDetector(
                         onTap: viewScoreDetails,
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black, width: 1.5),
+                            border: Border.all(color: iconColor, width: 1.5),
                           ),
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
                             score.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.black),
+                            style: TextStyle(fontSize: 14, color: iconColor),
                           ),
                         ),
                       ),
@@ -543,259 +535,248 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            body: isImageLoading
-                ? const Scaffold(
-                    body: Center(child: CircularProgressIndicator()))
-                : SafeArea(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: taskList.isEmpty
-                              ? const Center(child: Text('No tasks found'))
-                              : ListView.builder(
-                                  itemCount: taskList.length,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    Task task = taskList[index];
-                                    Duration? remainingDuration;
-                                    double progress = 0.0;
-                                    if (task.deadline != null &&
-                                        task.deadline!
-                                            .isAfter(DateTime.now())) {
-                                      remainingDuration = task.deadline!
-                                          .difference(DateTime.now());
-                                      int totalDurationInSeconds = task
-                                          .deadline!
-                                          .difference(DateTime.now())
-                                          .inSeconds;
-                                      progress = 1.0 -
-                                          (remainingDuration.inSeconds /
-                                              totalDurationInSeconds);
-                                    }
-                                    return Dismissible(
-                                      onDismissed: (direction) {
-                                        deleteTask(task);
-                                      },
-                                      key: ValueKey(task.id),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(1),
-                                        child: Card(
-                                          color: const Color.fromARGB(
-                                              255, 250, 250, 250),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(10),
-                                            child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                Expanded(
-                                                  child: ListTile(
-                                                    leading: Checkbox(
-                                                      value: task.isCompleted,
-                                                      onChanged: (value) =>
-                                                          completeTask(task),
-                                                    ),
-                                                    title: Text(
-                                                      task.name,
-                                                      style: TextStyle(
-                                                        fontSize: 17.5,
-                                                        decoration:
-                                                            task.isCompleted
-                                                                ? TextDecoration
-                                                                    .lineThrough
-                                                                : null,
-                                                        color: task.isCompleted
-                                                            ? Colors.grey
-                                                            : null,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: taskList.isEmpty
+                        ? const Center(
+                            child: Text(
+                            'No tasks found',
+                            style: TextStyle(color: Colors.white),
+                          ))
+                        : ListView.builder(
+                            itemCount: taskList.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              Task task = taskList[index];
+                              Duration? remainingDuration;
+                              double progress = 0.0;
+                              if (task.deadline != null &&
+                                  task.deadline!.isAfter(DateTime.now())) {
+                                remainingDuration =
+                                    task.deadline!.difference(DateTime.now());
+                                int totalDurationInSeconds = task.deadline!
+                                    .difference(DateTime.now())
+                                    .inSeconds;
+                                progress = 1.0 -
+                                    (remainingDuration.inSeconds /
+                                        totalDurationInSeconds);
+                              }
+                              return Dismissible(
+                                onDismissed: (direction) {
+                                  deleteTask(task);
+                                },
+                                key: ValueKey(task.id),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(1),
+                                  child: Card(
+                                    color: cardColor,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Expanded(
+                                            child: ListTile(
+                                              leading: Checkbox(
+                                                value: task.isCompleted,
+                                                onChanged: (value) =>
+                                                    completeTask(task),
+                                                activeColor: iconColor,
+                                                checkColor: Colors.black,
+                                              ),
+                                              title: Text(
+                                                task.name,
+                                                style: TextStyle(
+                                                  fontSize: 17.5,
+                                                  decoration: task.isCompleted
+                                                      ? TextDecoration
+                                                          .lineThrough
+                                                      : null,
+                                                  color: task.isCompleted
+                                                      ? Color.fromARGB(
+                                                          255, 3, 36, 9)
+                                                      : textColor,
+                                                ),
+                                              ),
+                                              trailing: task.deadline != null
+                                                  ? Container(
+                                                      width: 30,
+                                                      height: 30,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        value: task.deadline!
+                                                                .isAfter(
+                                                                    DateTime
+                                                                        .now())
+                                                            ? progress
+                                                            : 1.0,
+                                                        backgroundColor:
+                                                            Colors.grey[300],
+                                                        color: Colors.blue,
                                                       ),
-                                                    ),
-                                                    trailing:
-                                                        task.deadline != null
-                                                            ? Container(
-                                                                width: 30,
-                                                                height: 30,
-                                                                child:
-                                                                    CircularProgressIndicator(
-                                                                  value: task
-                                                                          .deadline!
-                                                                          .isAfter(
-                                                                              DateTime.now())
-                                                                      ? progress
-                                                                      : 1.0,
-                                                                  backgroundColor:
-                                                                      Colors.grey[
-                                                                          300],
-                                                                  color: Colors
-                                                                      .blue,
-                                                                ),
-                                                              )
-                                                            : null,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(
-                                                    Icons.edit,
-                                                    color: Color.fromARGB(
-                                                        255, 1, 93, 100),
-                                                  ),
-                                                  onPressed: () =>
-                                                      _editTask(task),
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(
-                                                    Icons.delete,
-                                                    color: Color.fromARGB(
-                                                        255, 169, 11, 0),
-                                                  ),
-                                                  onPressed: () =>
-                                                      deleteTask(task),
-                                                ),
-                                              ],
+                                                    )
+                                                  : null,
                                             ),
                                           ),
-                                        ),
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.edit,
+                                              color: iconColor,
+                                            ),
+                                            onPressed: () => _editTask(task),
+                                          ),
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.delete,
+                                              color: iconColor,
+                                            ),
+                                            onPressed: () => deleteTask(task),
+                                          ),
+                                        ],
                                       ),
-                                    );
-                                  },
-                                ),
-                        ),
-                        if (isNewUser)
-                          Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.grey[200],
-                              ),
-                              padding: const EdgeInsets.all(16.0),
-                              child: const Text(
-                                "Welcome to Task Tracker! \nDon't wait to add your first task! Click on the + button below to get started.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 20),
-                              ),
-                            ),
-                          ),
-                        if (!isNewUser)
-                          Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.grey[200],
-                              ),
-                              padding: const EdgeInsets.all(10.0),
-                              child: TextButton(
-                                onPressed: _fetchRandomQuote,
-                                child: Text(
-                                  "\" $_quote \"",
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    color: Color.fromARGB(255, 1, 93, 100),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              );
+                            },
+                          ),
+                  ),
+                  if (isNewUser)
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.grey[200],
+                        ),
+                        padding: const EdgeInsets.all(16.0),
+                        child: const Text(
+                          "Welcome to Task Tracker! \nDon't wait to add your first task! Click on the + button below to get started.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ),
+                    ),
+                  if (!isNewUser)
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.grey[200],
+                        ),
+                        padding: const EdgeInsets.all(10.0),
+                        child: TextButton(
+                          onPressed: _fetchRandomQuote,
+                          child: Text(
+                            "\" $_quote \"",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Color.fromARGB(255, 1, 93, 100),
                             ),
                           ),
-                        Container(
-                          margin: EdgeInsets.fromLTRB(0, 0, 0,
-                              MediaQuery.of(context).size.height * 0.02),
-                          child: IntrinsicHeight(
-                            child: IntrinsicWidth(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    isScrollControlled: true,
-                                    context: context,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(16.0)),
+                        ),
+                      ),
+                    ),
+                  Container(
+                    margin: EdgeInsets.fromLTRB(
+                        0, 0, 0, MediaQuery.of(context).size.height * 0.02),
+                    child: IntrinsicHeight(
+                      child: IntrinsicWidth(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              isScrollControlled: true,
+                              context: context,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16.0)),
+                              ),
+                              builder: (BuildContext context) {
+                                TextEditingController taskController =
+                                    TextEditingController();
+                                DateTime? selectedDate;
+                                return SingleChildScrollView(
+                                  child: Container(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.of(context)
+                                          .viewInsets
+                                          .bottom,
+                                      left: 16.0,
+                                      right: 16.0,
                                     ),
-                                    builder: (BuildContext context) {
-                                      TextEditingController taskController =
-                                          TextEditingController();
-                                      DateTime? selectedDate;
-                                      return SingleChildScrollView(
-                                        child: Container(
-                                          padding: EdgeInsets.only(
-                                            bottom: MediaQuery.of(context)
-                                                .viewInsets
-                                                .bottom,
-                                            left: 16.0,
-                                            right: 16.0,
-                                          ),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              TextField(
-                                                controller: taskController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                  hintText: 'Enter task',
-                                                ),
-                                              ),
-                                              const SizedBox(height: 16.0),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      const Color.fromARGB(
-                                                          255, 1, 93, 100),
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            20.0),
-                                                  ),
-                                                ),
-                                                onPressed: () {
-                                                  String task = taskController
-                                                      .text
-                                                      .trim();
-                                                  if (task.isNotEmpty) {
-                                                    if (selectedDate != null) {
-                                                      // Check if a date is selected
-                                                      addTask(task,
-                                                          selectedDate); // Pass the selectedDate to addTask
-                                                    } else {
-                                                      addTask(task,
-                                                          null); // No deadline selected
-                                                    }
-
-                                                    Navigator.of(context).pop();
-                                                  }
-                                                },
-                                                child: const Text('Add Task'),
-                                              ),
-                                            ],
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(
+                                          controller: taskController,
+                                          decoration: const InputDecoration(
+                                            hintText: 'Enter task',
                                           ),
                                         ),
-                                      );
-                                    },
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      const Color.fromARGB(255, 1, 93, 100),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(50.0),
+                                        const SizedBox(height: 16.0),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                    255, 1, 93, 100),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20.0),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            String task =
+                                                taskController.text.trim();
+                                            if (task.isNotEmpty) {
+                                              if (selectedDate != null) {
+                                                // Check if a date is selected
+                                                addTask(task,
+                                                    selectedDate); // Pass the selectedDate to addTask
+                                              } else {
+                                                addTask(task,
+                                                    null); // No deadline selected
+                                              }
+
+                                              Navigator.of(context).pop();
+                                            }
+                                          },
+                                          child: const Text('Add Task'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add),
-                                    SizedBox(width: 5.0),
-                                    Text('Add Task')
-                                  ],
-                                ),
-                              ),
+                                );
+                              },
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 1, 93, 100),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50.0),
                             ),
                           ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add),
+                              SizedBox(width: 5.0),
+                              Text('Add Task')
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                ],
+              ),
+            ),
           ),
         ));
   }

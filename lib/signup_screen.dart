@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_tracker/home_screen.dart';
 import 'package:task_tracker/login_screen.dart';
+import 'package:task_tracker/utilities/colors.dart';
 import 'auth_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -107,8 +108,7 @@ class SignupScreen extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Container(
         decoration: BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage('assets/loginBG.jpg'), fit: BoxFit.fill),
+          color: bgColor,
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -130,9 +130,11 @@ class SignupScreen extends StatelessWidget {
                     Text(
                       "Task Tracker",
                       style: GoogleFonts.kaushanScript(
-                          fontSize: 45, fontWeight: FontWeight.w900),
+                          fontSize: 45,
+                          fontWeight: FontWeight.w900,
+                          color: textColor),
                     ),
-                    SizedBox(height: 20.0),
+                    SizedBox(height: 40.0),
                     FractionallySizedBox(
                       widthFactor: 0.85,
                       child: TextField(
@@ -172,17 +174,23 @@ class SignupScreen extends StatelessWidget {
                       widthFactor: 0.85,
                       child: ElevatedButton(
                         onPressed: () => _signup(context),
-                        child: Text('SignUp'),
+                        child: Text(
+                          'SignUp',
+                          style: TextStyle(color: Colors.black),
+                        ),
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20)),
-                            backgroundColor: Colors.black,
+                            backgroundColor: Color.fromARGB(255, 179, 254, 242),
                             padding: EdgeInsets.symmetric(vertical: 15)),
                       ),
                     ),
                     SizedBox(height: 5.0),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text("Already have an account?"),
+                      Text(
+                        "Already have an account?",
+                        style: TextStyle(color: textColor),
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -192,11 +200,18 @@ class SignupScreen extends StatelessWidget {
                           );
                         },
                         // Call _signup method when pressed
-                        child: Text('Login'),
+                        child: Text(
+                          'Login',
+                          style: TextStyle(
+                              color: Color.fromARGB(255, 68, 255, 211)),
+                        ),
                       ),
                     ]),
                     SizedBox(height: 25.0),
-                    Text('OR'),
+                    Text(
+                      'OR',
+                      style: TextStyle(color: textColor),
+                    ),
                     SizedBox(height: 25.0),
                     FractionallySizedBox(
                       widthFactor: 0.85,
