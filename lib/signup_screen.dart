@@ -103,14 +103,12 @@ class SignupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String imageUrl =
-        'https://firebasestorage.googleapis.com/v0/b/task-tracker-c89e2.appspot.com/o/backgroundImage%2FloginBG.jpg?alt=media&token=c1b8e80f-08fd-4db9-98c1-472beb903cda';
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Container(
         decoration: BoxDecoration(
-          image:
-              DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.fill),
+          image: DecorationImage(
+              image: AssetImage('assets/loginBG.jpg'), fit: BoxFit.fill),
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -204,9 +202,20 @@ class SignupScreen extends StatelessWidget {
                       widthFactor: 0.85,
                       child: ElevatedButton(
                         onPressed: () => _signUpWithGoogle(context),
-                        child: Text(
-                          'Sign up with Google',
-                          style: TextStyle(color: Colors.black),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(right: 12),
+                              child: Image.asset(
+                                'assets/google.png',
+                                height:
+                                    MediaQuery.of(context).size.height * 0.04,
+                              ),
+                            ),
+                            Text('Sign up with Google',
+                                style: TextStyle(color: Colors.black)),
+                          ],
                         ),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(

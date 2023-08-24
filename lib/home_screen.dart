@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:task_tracker/login_screen.dart';
 import 'package:task_tracker/signup_screen.dart';
@@ -7,6 +9,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'score_details_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/cupertino.dart';
+// import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -19,26 +25,81 @@ class _HomeScreenState extends State<HomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String backgroundImagePath = '';
+  bool isImageLoading = true;
+  late Timer _timer;
 
-  List<String> motivationalQuotes = [
-    "The only way to do great work is to love what you do.",
-    "Don't watch the clock; do what it does. Keep going.",
-    "The future depends on what you do today.",
-    "Believe you can and you're halfway there.",
-    "Success is not final, failure is not fatal: It is the courage to continue that counts."
-  ];
+  // List<String> motivationalQuotes = [
+  //   "The only way to do great work is to love what you do.",
+  //   "Don't watch the clock; do what it does. Keep going.",
+  //   "The future depends on what you do today.",
+  //   "Believe you can and you're halfway there.",
+  //   "Success is not final, failure is not fatal: It is the courage to continue that counts."
+  // ];
 
   String quote = '';
+  String _quote = 'Loading...';
   bool isNewUser = false;
+  String? userProfileImageUrl;
 
   @override
   void initState() {
     super.initState();
     initializePreferences();
-    getRandomQuote();
+    // getRandomQuote();
     taskList = [];
     score = 0;
     loadTasksFromFirestore();
+    _fetchRandomQuote();
+    _loadImage();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Update the UI periodically here
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer
+        .cancel(); // Don't forget to cancel the timer when the widget is disposed
+    super.dispose();
+  }
+
+  void _fetchRandomQuote() async {
+    try {
+      // Replace 'YOUR_API_ENDPOINT' with the actual URL of your API that provides random quotes.
+      var url = Uri.parse('https://zenquotes.io/api/quotes/');
+      var response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        // Assuming your API response is in the format: {"quote": "Your random quote here"}
+        List<dynamic> data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          final randomIndex = Random().nextInt(data.length);
+          setState(() {
+            _quote = data[randomIndex]['q'];
+          });
+        } else {
+          setState(() {
+            _quote = 'No quotes Available';
+          });
+        }
+      } else {
+        // Handle the case when the API call fails.
+        setState(() {
+          _quote = 'Failed to fetch quote';
+        });
+      }
+    } catch (e) {
+      // Handle any exceptions that occur during the API call.
+      setState(() {
+        _quote = 'Error: $e';
+      });
+    }
   }
 
   Future<void> initializePreferences() async {
@@ -64,13 +125,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   id: doc.id,
                   name: doc.data()['name'],
                   isCompleted: doc.data()['isCompleted'],
+                  deadline: doc.data()['deadline'] != null
+                      ? DateTime.parse(doc.data()['deadline'])
+                      : null,
                 ))
             .toList();
         final scoreDoc = snapshot.docs.firstWhere((doc) => doc.id == 'score');
 
         setState(() {
           taskList = tasks;
-          score = scoreDoc?.data()['score'] ?? 0;
+          score = scoreDoc.data()['score'] ?? 0;
         });
       } else {
         setState(() {
@@ -90,57 +154,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void getRandomQuote() {
-    setState(() {
-      quote = motivationalQuotes[Random().nextInt(motivationalQuotes.length)];
-    });
-  }
-
-  Future<void> addTask(String taskName) async {
-    final User? currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      final collection = FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('taskList');
-
-      final docRef = await collection.add({
-        'name': taskName,
-        'isCompleted': false,
-      });
-
-      print('Task added with ID: ${docRef.id}');
-
-      final task = Task(
-        id: docRef.id,
-        name: taskName,
-        isCompleted: false,
-      );
-
-      setState(() {
-        taskList.add(task);
-        if (taskList.length == 1) {
-          score = 0; // Set score to 0 if it's the first task
-        }
-      });
-
-      await collection.doc(docRef.id).update({
-        'id': docRef.id,
-      });
-
-      await collection.doc('taskList').update({
-        'tasks': taskList.map((task) => task.toJson()).toList(),
-      });
-
-      // Create the score document if it doesn't exist
-      final scoreDoc = await collection.doc('score').get();
-      if (!scoreDoc.exists) {
-        await collection.doc('score').set({
-          'score': score,
-        });
-      }
-    }
-  }
+  // void getRandomQuote() {
+  //   setState(() {
+  //     quote = motivationalQuotes[Random().nextInt(motivationalQuotes.length)];
+  //   });
+  // }
 
   Future<void> completeTask(Task task) async {
     final User? currentUser = _auth.currentUser;
@@ -234,25 +252,109 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> addTask(String taskName, DateTime? deadline) async {
+    final User? currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      final collection = FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('taskList');
+
+      final docRef = await collection.add({
+        'name': taskName,
+        'isCompleted': false,
+        'deadline': deadline?.toIso8601String(),
+      });
+
+      print('Task added with ID: ${docRef.id}');
+
+      final task = Task(
+        id: docRef.id,
+        name: taskName,
+        isCompleted: false,
+      );
+
+      setState(() {
+        taskList.add(task);
+        if (taskList.length == 1) {
+          score = 0; // Set score to 0 if it's the first task
+        }
+      });
+
+      await collection.doc(docRef.id).update({
+        'id': docRef.id,
+      });
+
+      await collection.doc('taskList').update({
+        'tasks': taskList.map((task) => task.toJson()).toList(),
+      });
+
+      // Create the score document if it doesn't exist
+      final scoreDoc = await collection.doc('score').get();
+      if (!scoreDoc.exists) {
+        await collection.doc('score').set({
+          'score': score,
+        });
+      }
+    }
+  }
+
   void _editTask(Task task) {
     TextEditingController taskController =
         TextEditingController(text: task.name);
+
+    DateTime selectedDate = task.deadline ?? DateTime.now();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Task'),
-          content: TextField(
-            controller: taskController,
-            decoration: InputDecoration(hintText: 'Enter task'),
+          title: const Text('Edit Task'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: taskController,
+                decoration: const InputDecoration(hintText: 'Enter task'),
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return Container(
+                        height: 300,
+                        child: CupertinoDatePicker(
+                          mode: CupertinoDatePickerMode.date,
+                          initialDateTime: DateTime.now(),
+                          onDateTimeChanged: (DateTime newDate) {
+                            selectedDate = newDate;
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Deadline:'),
+                    Text(
+                      '${selectedDate.year}-${selectedDate.month}-${selectedDate.day}',
+                      style: const TextStyle(color: Colors.blue),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -267,11 +369,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     setState(() {
                       task.name = updatedTaskName;
+                      task.deadline = selectedDate;
                     });
 
                     await collection.doc(task.id).update({
-                      'name':
-                          updatedTaskName, // Update the task name in Firestore
+                      'name': updatedTaskName,
+                      'deadline': selectedDate
+                          .toIso8601String(), // Update the task name in Firestore
                     });
 
                     Navigator.pop(context);
@@ -284,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 }
               },
-              child: Text('Save Changes'),
+              child: const Text('Save Changes'),
             ),
           ],
         );
@@ -300,6 +404,13 @@ class _HomeScreenState extends State<HomeScreen> {
       if (doc.exists) {
         setState(() {
           isNewUser = false;
+          userProfileImageUrl = currentUser.photoURL;
+          print(userProfileImageUrl);
+        });
+      } else {
+        setState(() {
+          isNewUser = true;
+          userProfileImageUrl = currentUser.photoURL;
         });
       }
     }
@@ -334,91 +445,108 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _loadImage() async {
+    try {
+      // Load the image path
+      final imagePath = await _getImagePath();
+      setState(() {
+        backgroundImagePath = imagePath;
+        isImageLoading = false;
+      });
+    } catch (e) {
+      print('Failed to load image: $e');
+    }
+  }
+
+  Future<String> _getImagePath() async {
+    // Simulate image loading by adding a delay.
+    await Future.delayed(const Duration(seconds: 4));
+    return 'assets/loginBG.jpg';
+  }
+
   @override
   Widget build(BuildContext context) {
-    const imageUrl =
-        'https://firebasestorage.googleapis.com/v0/b/task-tracker-c89e2.appspot.com/o/backgroundImage%2FloginBG.jpg?alt=media&token=c1b8e80f-08fd-4db9-98c1-472beb903cda';
-
-    return FutureBuilder<void>(
-        future: precacheImage(NetworkImage(imageUrl), context),
-        builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('Failed to load image'),
-            );
-          } else {
-            return MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                      image: NetworkImage(imageUrl), fit: BoxFit.fill),
-                ),
-                child: Scaffold(
-                  backgroundColor: Colors.transparent,
-                  resizeToAvoidBottomInset: false,
-                  appBar: AppBar(
-                    elevation: 0.5,
-                    backgroundColor: Colors.white,
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Task Tracker',
-                          style: TextStyle(color: Colors.black),
-                        ),
-                        Row(
-                          children: [
-                            PopupMenuButton(
-                              iconSize: 40,
-                              offset: Offset(0, 50),
-                              itemBuilder: (BuildContext context) {
-                                return [
-                                  PopupMenuItem(
-                                    child: TextButton(
-                                      onPressed: () => _signoutLogin(),
-                                      child: Text('SignUp/Login'),
-                                    ),
-                                  ),
-                                  PopupMenuItem(
-                                    child: TextButton(
-                                      onPressed: () => _signOut(),
-                                      child: Text('SignOut'),
-                                    ),
-                                  ),
-                                ];
-                              },
-                              icon: Icon(Icons.account_circle,
-                                  color: Colors.black),
-                            ),
-                            GestureDetector(
-                              onTap: viewScoreDetails,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.black, width: 1.5),
-                                ),
-                                padding: EdgeInsets.all(8.0),
-                                child: Text(
-                                  score.toString().padLeft(2, '0'),
-                                  style: TextStyle(
-                                      fontSize: 14, color: Colors.black),
+    //   return const Scaffold(
+    //     body: Center(
+    //       child: CircularProgressIndicator(),
+    //     ),
+    //   );
+    // } else if (snapshot.hasError) {
+    //   return const Center(
+    //     child: Text('Failed to load image'),
+    //   );
+    // } else {
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Container(
+          decoration:
+              const BoxDecoration(color: Color.fromARGB(255, 21, 28, 44)),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: false,
+            appBar: AppBar(
+              elevation: 0.5,
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Task Tracker',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  Row(
+                    children: [
+                      if (userProfileImageUrl != null)
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(userProfileImageUrl!),
+                        )
+                      else
+                        PopupMenuButton(
+                          iconSize: 40,
+                          offset: const Offset(0, 50),
+                          itemBuilder: (BuildContext context) {
+                            return [
+                              PopupMenuItem(
+                                child: TextButton(
+                                  onPressed: () => _signoutLogin(),
+                                  child: const Text('SignUp/Login'),
                                 ),
                               ),
-                            ),
-                          ],
+                              PopupMenuItem(
+                                child: TextButton(
+                                  onPressed: () => _signOut(),
+                                  child: const Text('SignOut'),
+                                ),
+                              ),
+                            ];
+                          },
+                          icon: const Icon(Icons.account_circle,
+                              color: Colors.black),
                         ),
-                      ],
-                    ),
+                      GestureDetector(
+                        onTap: viewScoreDetails,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 1.5),
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            score.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.black),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  body: SafeArea(
+                ],
+              ),
+            ),
+            body: isImageLoading
+                ? const Scaffold(
+                    body: Center(child: CircularProgressIndicator()))
+                : SafeArea(
                     child: Column(
                       children: [
                         Expanded(
@@ -429,63 +557,100 @@ class _HomeScreenState extends State<HomeScreen> {
                                   itemBuilder:
                                       (BuildContext context, int index) {
                                     Task task = taskList[index];
-                                    return Padding(
-                                      padding: EdgeInsets.all(1.0),
-                                      child: Card(
-                                        color: const Color.fromARGB(
-                                            255, 250, 250, 250),
-                                        child: Padding(
-                                          padding: EdgeInsets.all(10),
-                                          child: ListTile(
-                                            leading: Checkbox(
-                                              value: task.isCompleted,
-                                              onChanged: (value) =>
-                                                  completeTask(task),
-                                            ),
-                                            title: Text(
-                                              task.name,
-                                              style: TextStyle(
-                                                fontSize: 17.5,
-                                                decoration: task.isCompleted
-                                                    ? TextDecoration.lineThrough
-                                                    : null,
-                                                color: task.isCompleted
-                                                    ? Colors.grey
-                                                    : null,
-                                              ),
-                                            ),
-                                            trailing: Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.25,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Expanded(
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        Icons.edit,
-                                                        color: Color.fromARGB(
-                                                            255, 1, 93, 100),
-                                                      ),
-                                                      onPressed: () =>
-                                                          _editTask(task),
+                                    Duration? remainingDuration;
+                                    double progress = 0.0;
+                                    if (task.deadline != null &&
+                                        task.deadline!
+                                            .isAfter(DateTime.now())) {
+                                      remainingDuration = task.deadline!
+                                          .difference(DateTime.now());
+                                      int totalDurationInSeconds = task
+                                          .deadline!
+                                          .difference(DateTime.now())
+                                          .inSeconds;
+                                      progress = 1.0 -
+                                          (remainingDuration.inSeconds /
+                                              totalDurationInSeconds);
+                                    }
+                                    return Dismissible(
+                                      onDismissed: (direction) {
+                                        deleteTask(task);
+                                      },
+                                      key: ValueKey(task.id),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(1),
+                                        child: Card(
+                                          color: const Color.fromARGB(
+                                              255, 250, 250, 250),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(10),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Expanded(
+                                                  child: ListTile(
+                                                    leading: Checkbox(
+                                                      value: task.isCompleted,
+                                                      onChanged: (value) =>
+                                                          completeTask(task),
                                                     ),
-                                                  ),
-                                                  Expanded(
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        Icons.delete,
-                                                        color: Color.fromARGB(
-                                                            255, 169, 11, 0),
+                                                    title: Text(
+                                                      task.name,
+                                                      style: TextStyle(
+                                                        fontSize: 17.5,
+                                                        decoration:
+                                                            task.isCompleted
+                                                                ? TextDecoration
+                                                                    .lineThrough
+                                                                : null,
+                                                        color: task.isCompleted
+                                                            ? Colors.grey
+                                                            : null,
                                                       ),
-                                                      onPressed: () =>
-                                                          deleteTask(task),
                                                     ),
+                                                    trailing:
+                                                        task.deadline != null
+                                                            ? Container(
+                                                                width: 30,
+                                                                height: 30,
+                                                                child:
+                                                                    CircularProgressIndicator(
+                                                                  value: task
+                                                                          .deadline!
+                                                                          .isAfter(
+                                                                              DateTime.now())
+                                                                      ? progress
+                                                                      : 1.0,
+                                                                  backgroundColor:
+                                                                      Colors.grey[
+                                                                          300],
+                                                                  color: Colors
+                                                                      .blue,
+                                                                ),
+                                                              )
+                                                            : null,
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.edit,
+                                                    color: Color.fromARGB(
+                                                        255, 1, 93, 100),
+                                                  ),
+                                                  onPressed: () =>
+                                                      _editTask(task),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete,
+                                                    color: Color.fromARGB(
+                                                        255, 169, 11, 0),
+                                                  ),
+                                                  onPressed: () =>
+                                                      deleteTask(task),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
@@ -503,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Colors.grey[200],
                               ),
                               padding: const EdgeInsets.all(16.0),
-                              child: Text(
+                              child: const Text(
                                 "Welcome to Task Tracker! \nDon't wait to add your first task! Click on the + button below to get started.",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 20),
@@ -518,11 +683,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 color: Colors.grey[200],
                               ),
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                quote,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 20),
+                              padding: const EdgeInsets.all(10.0),
+                              child: TextButton(
+                                onPressed: _fetchRandomQuote,
+                                child: Text(
+                                  "\" $_quote \"",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    color: Color.fromARGB(255, 1, 93, 100),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -536,13 +707,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   showModalBottomSheet(
                                     isScrollControlled: true,
                                     context: context,
-                                    shape: RoundedRectangleBorder(
+                                    shape: const RoundedRectangleBorder(
                                       borderRadius: BorderRadius.vertical(
                                           top: Radius.circular(16.0)),
                                     ),
                                     builder: (BuildContext context) {
                                       TextEditingController taskController =
                                           TextEditingController();
+                                      DateTime? selectedDate;
                                       return SingleChildScrollView(
                                         child: Container(
                                           padding: EdgeInsets.only(
@@ -557,15 +729,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                             children: [
                                               TextField(
                                                 controller: taskController,
-                                                decoration: InputDecoration(
+                                                decoration:
+                                                    const InputDecoration(
                                                   hintText: 'Enter task',
                                                 ),
                                               ),
-                                              SizedBox(height: 16.0),
+                                              const SizedBox(height: 16.0),
                                               ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
-                                                      Color.fromARGB(
+                                                      const Color.fromARGB(
                                                           255, 1, 93, 100),
                                                   foregroundColor: Colors.white,
                                                   shape: RoundedRectangleBorder(
@@ -579,11 +752,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       .text
                                                       .trim();
                                                   if (task.isNotEmpty) {
-                                                    addTask(task);
+                                                    if (selectedDate != null) {
+                                                      // Check if a date is selected
+                                                      addTask(task,
+                                                          selectedDate); // Pass the selectedDate to addTask
+                                                    } else {
+                                                      addTask(task,
+                                                          null); // No deadline selected
+                                                    }
+
                                                     Navigator.of(context).pop();
                                                   }
                                                 },
-                                                child: Text('Add Task'),
+                                                child: const Text('Add Task'),
                                               ),
                                             ],
                                           ),
@@ -594,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
-                                      Color.fromARGB(255, 1, 93, 100),
+                                      const Color.fromARGB(255, 1, 93, 100),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(50.0),
                                   ),
@@ -615,10 +796,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                ),
-              ),
-            );
-          }
-        });
+          ),
+        ));
   }
 }
