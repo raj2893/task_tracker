@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String backgroundImagePath = '';
   // bool isImageLoading = true;
   late Timer _timer;
-
+  String? userProfileImageUrl;
   // List<String> motivationalQuotes = [
   //   "The only way to do great work is to love what you do.",
   //   "Don't watch the clock; do what it does. Keep going.",
@@ -42,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String quote = '';
   String _quote = 'Loading...';
   bool isNewUser = false;
-  String? userProfileImageUrl;
 
   @override
   void initState() {
@@ -54,6 +53,17 @@ class _HomeScreenState extends State<HomeScreen> {
     loadTasksFromFirestore();
     _fetchRandomQuote();
     _startTimer();
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        setState(() {
+          userProfileImageUrl = user.photoURL;
+        });
+      } else {
+        setState(() {
+          userProfileImageUrl = null;
+        });
+      }
+    });
   }
 
   void _startTimer() {
@@ -269,6 +279,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       print('Task added with ID: ${docRef.id}');
 
+      print(userProfileImageUrl);
+
       final task = Task(
         id: docRef.id,
         name: taskName,
@@ -399,19 +411,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> checkNewUser() async {
     final User? currentUser = _auth.currentUser;
+
     if (currentUser != null) {
       final collection = _firestore.collection('users');
       final doc = await collection.doc(currentUser.uid).get();
+
       if (doc.exists) {
         setState(() {
           isNewUser = false;
-          userProfileImageUrl = currentUser.photoURL;
-          print(userProfileImageUrl);
         });
       } else {
         setState(() {
           isNewUser = true;
-          userProfileImageUrl = currentUser.photoURL;
         });
       }
     }
@@ -446,24 +457,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Future<void> _loadImage() async {
-  //   try {
-  //     // Load the image path
-  //     final imagePath = await _getImagePath();
-  //     setState(() {
-  //       backgroundImagePath = imagePath;
-  //       isImageLoading = false;
-  //     });
-  //   } catch (e) {
-  //     print('Failed to load image: $e');
-  //   }
-  // }
-
-  // Future<String> _getImagePath() async {
-  //   // Simulate image loading by adding a delay.
-  //   await Future.delayed(const Duration(seconds: 4));
-  //   return 'assets/loginBG.jpg';
-  // }
+  void showUserOptions() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton(
+                onPressed: () => _signoutLogin(),
+                child: const Text('SignUp/Login'),
+              ),
+              TextButton(
+                onPressed: () => _signOut(),
+                child: const Text('SignOut'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -488,13 +503,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Color.fromARGB(255, 201, 255, 238),
                         fontSize: 24),
                   ),
-                  Row(
-                    children: [
-                      if (userProfileImageUrl != null)
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(userProfileImageUrl!),
-                        )
-                      else
+                  if (userProfileImageUrl == null)
+                    Row(
+                      children: [
                         PopupMenuButton(
                           iconSize: 40,
                           offset: const Offset(0, 50),
@@ -516,22 +527,97 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                           icon: Icon(Icons.account_circle, color: iconColor),
                         ),
-                      GestureDetector(
-                        onTap: viewScoreDetails,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: iconColor, width: 1.5),
+                        GestureDetector(
+                          onTap: viewScoreDetails,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: iconColor, width: 1.5),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              score.toString().padLeft(2, '0'),
+                              style: TextStyle(fontSize: 14, color: iconColor),
+                            ),
                           ),
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            score.toString().padLeft(2, '0'),
-                            style: TextStyle(fontSize: 14, color: iconColor),
+                        )
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        PopupMenuButton(
+                          color: cardColor,
+                          offset: const Offset(0, 50),
+                          itemBuilder: (BuildContext context) {
+                            return [
+                              PopupMenuItem(
+                                child: TextButton(
+                                  onPressed: () => _signoutLogin(),
+                                  child: Text(
+                                    'SignUp/Login',
+                                    style: GoogleFonts.ubuntu(color: textColor),
+                                  ),
+                                ),
+                              ),
+                              PopupMenuItem(
+                                child: TextButton(
+                                  onPressed: () => _signOut(),
+                                  child: Text(
+                                    'SignOut',
+                                    style: GoogleFonts.ubuntu(color: textColor),
+                                  ),
+                                ),
+                              ),
+                            ];
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.all(5),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 2.0),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                    25), // Half of the width and height
+                                child: Image.network(
+                                  userProfileImageUrl!,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        Container(
+                          height: 40,
+                          width: 40,
+                          child: GestureDetector(
+                            onTap: viewScoreDetails,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: iconColor, width: 1.5),
+                              ),
+                              padding: const EdgeInsets.all(8.0),
+                              child: Center(
+                                child: Text(
+                                  score.toString(),
+                                  style:
+                                      TextStyle(fontSize: 16, color: iconColor),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -588,8 +674,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               title: Text(
                                                 task.name,
-                                                style: TextStyle(
+                                                style: GoogleFonts.ubuntu(
                                                   fontSize: 17.5,
+                                                  fontWeight: FontWeight.w400,
                                                   decoration: task.isCompleted
                                                       ? TextDecoration
                                                           .lineThrough
@@ -655,7 +742,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: const Text(
                           "Welcome to Task Tracker! \nDon't wait to add your first task! Click on the + button below to get started.",
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 20),
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Color.fromARGB(255, 1, 93, 100),
+                          ),
                         ),
                       ),
                     ),

@@ -28,7 +28,7 @@ class ScoreDetailsScreen extends StatelessWidget {
               'Score Details',
               style: GoogleFonts.ubuntu(
                   fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 201, 255, 238),
+                  color: const Color.fromARGB(255, 201, 255, 238),
                   fontSize: 24),
             ),
           ],
@@ -51,16 +51,17 @@ class ScoreDetailsScreen extends StatelessWidget {
                 child: Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)),
-                  color: const Color.fromARGB(255, 218, 255, 251),
+                  color: cardColor,
                   child: Column(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Align(
                           alignment: Alignment.topLeft,
                           child: Padding(
-                            padding: EdgeInsets.all(5),
+                            padding: const EdgeInsets.all(5),
                             child: Card(
-                              child: Padding(
+                              color: textColor,
+                              child: const Padding(
                                 padding: EdgeInsets.all(5),
                                 child: Text(
                                   '#Task Score :-',
@@ -82,7 +83,7 @@ class ScoreDetailsScreen extends StatelessWidget {
                             style: GoogleFonts.lobster(
                               fontSize: 50.0,
                               fontWeight: FontWeight.bold,
-                              color: const Color.fromARGB(255, 0, 46, 84),
+                              color: textColor,
                             ),
                           ),
                         ),
@@ -101,20 +102,20 @@ class ScoreDetailsScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
                                       padding: const EdgeInsets.all(5),
-                                      color:
-                                          const Color.fromARGB(255, 0, 46, 84),
+                                      color: textColor,
                                       child: const Row(
                                         children: [
                                           Padding(
                                             padding: EdgeInsets.only(right: 5),
                                             child: Icon(CupertinoIcons.refresh,
                                                 color: Color.fromARGB(
-                                                    255, 191, 241, 248)),
+                                                    255, 0, 46, 84)),
                                           ),
                                           Text(
                                             'Reset Score',
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: Color.fromARGB(
+                                                  255, 0, 46, 84),
                                             ),
                                           ),
                                         ],
@@ -157,7 +158,7 @@ class ScoreDetailsScreen extends StatelessWidget {
                   width: MediaQuery.of(context).size.width * 0.95,
                   child: Card(
                       // color: const Color.fromARGB(255, 255, 217, 183),
-                      color: const Color.fromARGB(255, 0, 17, 48),
+                      color: cardColor,
                       shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(15),
@@ -177,12 +178,13 @@ class ScoreDetailsScreen extends StatelessWidget {
                               SizedBox(
                                   width:
                                       MediaQuery.of(context).size.width * 0.02),
-                              const Text(
+                              Text(
                                 'Score Breakdown',
-                                style: TextStyle(
+                                style: GoogleFonts.ubuntu(
                                     fontSize: 24.0,
                                     fontWeight: FontWeight.bold,
-                                    color: Color.fromARGB(255, 218, 255, 251)),
+                                    color: const Color.fromARGB(
+                                        255, 218, 255, 251)),
                               ),
                             ],
                           ),
@@ -208,15 +210,17 @@ class ScoreDetailsScreen extends StatelessWidget {
                                       .toList()
                                       .length;
                                   return Card(
-                                    color: Color.fromARGB(255, 218, 255, 251),
+                                    color: const Color.fromARGB(
+                                        255, 218, 255, 251),
                                     child: Padding(
                                       padding: const EdgeInsets.all(30),
                                       child: Text(
                                         '${completedTaskIndex}. ${task.name}',
-                                        style: const TextStyle(
+                                        style: GoogleFonts.ubuntu(
                                           fontSize: 18.0,
                                           fontWeight: FontWeight.bold,
-                                          color: Color.fromARGB(255, 0, 17, 48),
+                                          color: const Color.fromARGB(
+                                              255, 0, 17, 48),
                                         ),
                                       ),
                                     ),
