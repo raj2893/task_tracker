@@ -4,11 +4,12 @@ class Task {
   bool isCompleted;
   DateTime? deadline;
 
-  Task(
-      {required this.id,
-      required this.name,
-      required this.isCompleted,
-      this.deadline});
+  Task({
+    required this.id,
+    required this.name,
+    required this.isCompleted,
+    this.deadline,
+  });
 
   // Convert Task object to JSON
   Map<String, dynamic> toJson() {

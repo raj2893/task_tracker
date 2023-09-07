@@ -1,7 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:task_tracker/login_screen.dart';
 import 'package:task_tracker/signup_screen.dart';
 import 'package:task_tracker/utilities/colors.dart';
@@ -14,7 +14,6 @@ import 'auth_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
-// import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -28,17 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String backgroundImagePath = '';
-  // bool isImageLoading = true;
-  late Timer _timer;
   String? userProfileImageUrl;
-  // List<String> motivationalQuotes = [
-  //   "The only way to do great work is to love what you do.",
-  //   "Don't watch the clock; do what it does. Keep going.",
-  //   "The future depends on what you do today.",
-  //   "Believe you can and you're halfway there.",
-  //   "Success is not final, failure is not fatal: It is the courage to continue that counts."
-  // ];
-
+  DateTime? selectedDate = null;
   String quote = '';
   String _quote = 'Loading...';
   bool isNewUser = false;
@@ -47,12 +37,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     initializePreferences();
-    // getRandomQuote();
     taskList = [];
     score = 0;
     loadTasksFromFirestore();
     _fetchRandomQuote();
-    _startTimer();
     _auth.authStateChanges().listen((User? user) {
       if (user != null) {
         setState(() {
@@ -66,17 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // Update the UI periodically here
-      setState(() {});
-    });
-  }
-
   @override
   void dispose() {
-    _timer
-        .cancel(); // Don't forget to cancel the timer when the widget is disposed
+    // Don't forget to cancel the timer when the widget is disposed
     super.dispose();
   }
 
@@ -164,12 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
-
-  // void getRandomQuote() {
-  //   setState(() {
-  //     quote = motivationalQuotes[Random().nextInt(motivationalQuotes.length)];
-  //   });
-  // }
 
   Future<void> completeTask(Task task) async {
     final User? currentUser = _auth.currentUser;
@@ -282,10 +256,10 @@ class _HomeScreenState extends State<HomeScreen> {
       print(userProfileImageUrl);
 
       final task = Task(
-        id: docRef.id,
-        name: taskName,
-        isCompleted: false,
-      );
+          id: docRef.id,
+          name: taskName,
+          isCompleted: false,
+          deadline: deadline);
 
       setState(() {
         taskList.add(task);
@@ -316,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TextEditingController taskController =
         TextEditingController(text: task.name);
 
-    DateTime selectedDate = task.deadline ?? DateTime.now();
+    DateTime? selectedDate = task.deadline ?? DateTime.now();
 
     showDialog(
       context: context,
@@ -353,8 +327,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Deadline:'),
+                    TextButton(
+                        style: TextButton.styleFrom(backgroundColor: bgColor),
+                        onPressed: () async {
+                          final User? currentUser = _auth.currentUser;
+
+                          if (currentUser != null) {
+                            final collection = _firestore
+                                .collection('users')
+                                .doc(currentUser.uid)
+                                .collection('taskList');
+                            setState(() {
+                              selectedDate = null;
+                              task.deadline = selectedDate;
+                            });
+                            await collection.doc(task.id).update({
+                              'deadline':
+                                  null, // Update the task name in Firestore
+                            });
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Text(
+                          'Null',
+                          style: TextStyle(color: textColor),
+                        )),
                     Text(
-                      '${selectedDate.year}-${selectedDate.month}-${selectedDate.day}',
+                      '${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}',
                       style: const TextStyle(color: Colors.blue),
                     ),
                   ],
@@ -387,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     await collection.doc(task.id).update({
                       'name': updatedTaskName,
-                      'deadline': selectedDate
+                      'deadline': selectedDate!
                           .toIso8601String(), // Update the task name in Firestore
                     });
 
@@ -635,19 +634,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemCount: taskList.length,
                             itemBuilder: (BuildContext context, int index) {
                               Task task = taskList[index];
-                              Duration? remainingDuration;
-                              double progress = 0.0;
                               if (task.deadline != null &&
-                                  task.deadline!.isAfter(DateTime.now())) {
-                                remainingDuration =
-                                    task.deadline!.difference(DateTime.now());
-                                int totalDurationInSeconds = task.deadline!
-                                    .difference(DateTime.now())
-                                    .inSeconds;
-                                progress = 1.0 -
-                                    (remainingDuration.inSeconds /
-                                        totalDurationInSeconds);
-                              }
+                                  task.deadline!.isAfter(DateTime.now())) {}
                               return Dismissible(
                                 onDismissed: (direction) {
                                   deleteTask(task);
@@ -672,39 +660,55 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 activeColor: iconColor,
                                                 checkColor: Colors.black,
                                               ),
-                                              title: Text(
-                                                task.name,
-                                                style: GoogleFonts.ubuntu(
-                                                  fontSize: 17.5,
-                                                  fontWeight: FontWeight.w400,
-                                                  decoration: task.isCompleted
-                                                      ? TextDecoration
-                                                          .lineThrough
-                                                      : null,
-                                                  color: task.isCompleted
-                                                      ? Color.fromARGB(
-                                                          255, 3, 36, 9)
-                                                      : textColor,
-                                                ),
-                                              ),
-                                              trailing: task.deadline != null
-                                                  ? Container(
-                                                      width: 30,
-                                                      height: 30,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        value: task.deadline!
-                                                                .isAfter(
-                                                                    DateTime
-                                                                        .now())
-                                                            ? progress
-                                                            : 1.0,
-                                                        backgroundColor:
-                                                            Colors.grey[300],
-                                                        color: Colors.blue,
+                                              title: Column(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.topLeft,
+                                                    child: Text(
+                                                      task.name,
+                                                      style: GoogleFonts.ubuntu(
+                                                        fontSize: 19.5,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                        decoration:
+                                                            task.isCompleted
+                                                                ? TextDecoration
+                                                                    .lineThrough
+                                                                : null,
+                                                        color: task.isCompleted
+                                                            ? Color.fromARGB(
+                                                                255, 3, 36, 9)
+                                                            : textColor,
                                                       ),
-                                                    )
-                                                  : null,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    height: 7,
+                                                  ),
+                                                  Container(
+                                                    child: task.deadline != null
+                                                        ? Align(
+                                                            alignment: Alignment
+                                                                .topLeft,
+                                                            child: Text(
+                                                              'Due: ${DateFormat('MMMM d, yyyy').format(task.deadline!)}',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: task
+                                                                        .deadline!
+                                                                        .isBefore(DateTime
+                                                                            .now())
+                                                                    ? bgColor
+                                                                    : Colors
+                                                                        .white60,
+                                                              ),
+                                                            ),
+                                                          )
+                                                        : null,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                           IconButton(
@@ -788,7 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               builder: (BuildContext context) {
                                 TextEditingController taskController =
                                     TextEditingController();
-                                DateTime? selectedDate;
+                                // DateTime? selectedDate;
                                 return SingleChildScrollView(
                                   child: Container(
                                     padding: EdgeInsets.only(
@@ -808,6 +812,111 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 16.0),
+                                        GestureDetector(
+                                          onTap: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return StatefulBuilder(
+                                                  builder: (context, setState) {
+                                                    return Container(
+                                                      child: Column(
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(8.0),
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              children: [
+                                                                const Text(
+                                                                    'Select Deadline:'),
+                                                                TextButton(
+                                                                    style: TextButton.styleFrom(
+                                                                        backgroundColor:
+                                                                            bgColor),
+                                                                    onPressed:
+                                                                        () {
+                                                                      selectedDate =
+                                                                          null;
+                                                                      Navigator.of(
+                                                                              context)
+                                                                          .pop(
+                                                                              selectedDate);
+                                                                    },
+                                                                    child: Text(
+                                                                      'Null',
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              textColor),
+                                                                    )),
+                                                                TextButton(
+                                                                  style: TextButton
+                                                                      .styleFrom(
+                                                                          backgroundColor:
+                                                                              cardColor),
+                                                                  onPressed:
+                                                                      () {
+                                                                    // Close the date picker and return the selected date
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop(
+                                                                            selectedDate);
+                                                                  },
+                                                                  child: Text(
+                                                                    'OK',
+                                                                    style: TextStyle(
+                                                                        color:
+                                                                            textColor),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child:
+                                                                CupertinoDatePicker(
+                                                              mode:
+                                                                  CupertinoDatePickerMode
+                                                                      .date,
+                                                              initialDateTime:
+                                                                  DateTime
+                                                                      .now(),
+                                                              onDateTimeChanged:
+                                                                  (DateTime
+                                                                      newDate) {
+                                                                setState(() {
+                                                                  selectedDate =
+                                                                      newDate;
+                                                                });
+                                                              },
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                            );
+                                          },
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text('Deadline:'),
+                                              Text(
+                                                selectedDate != null
+                                                    ? '${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}'
+                                                    : 'Select a date', // Handle the case when selectedDate is null
+                                                style: const TextStyle(
+                                                    color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
@@ -823,15 +932,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             String task =
                                                 taskController.text.trim();
                                             if (task.isNotEmpty) {
-                                              if (selectedDate != null) {
-                                                // Check if a date is selected
-                                                addTask(task,
-                                                    selectedDate); // Pass the selectedDate to addTask
-                                              } else {
-                                                addTask(task,
-                                                    null); // No deadline selected
-                                              }
+                                              addTask(task,
+                                                  selectedDate); // Pass the selectedDate to addTask
 
+                                              setState(() {});
                                               Navigator.of(context).pop();
                                             }
                                           },
